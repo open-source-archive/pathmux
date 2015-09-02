@@ -46,7 +46,7 @@ const (
 )
 
 type TreeMux struct {
-	root *node
+	Root *Node
 
 	// The default PanicHandler just returns a 500 code.
 	PanicHandler PanicHandler
@@ -100,7 +100,7 @@ type TreeMux struct {
 
 // Dump returns a text representation of the routing tree.
 func (t *TreeMux) Dump() string {
-	return t.root.dumpTree("", "")
+	return t.Root.dumpTree("", "")
 }
 
 // Path elements starting with : indicate a wildcard in the path. A wildcard will only match on a
@@ -176,11 +176,18 @@ func (t *TreeMux) Handle(method, path string, handler HandlerFunc) {
 		path = path[:len(path)-1]
 	}
 
-	node := t.root.addPath(path[1:], nil)
+	node, err := t.Root.addPath(path[1:], nil)
+	if err != nil {
+		panic(err)
+	}
+
 	if addSlash {
 		node.addSlash = true
 	}
-	node.setHandler(method, handler)
+
+	if err := node.setHandler(method, handler); err != nil {
+		panic(err)
+	}
 }
 
 // Syntactic sugar for Handle("GET", path, handler)
@@ -273,13 +280,13 @@ func (t *TreeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if trailingSlash && t.RedirectTrailingSlash {
 		path = path[:pathLen-1]
 	}
-	n, params := t.root.search(path[1:])
+	n, params := t.Root.Search(path[1:])
 	if n == nil {
 		if t.RedirectCleanPath {
 			// Path was not found. Try cleaning it up and search again.
 			// TODO Test this
 			cleanPath := httppath.Clean(path)
-			n, params = t.root.search(cleanPath[1:])
+			n, params = t.Root.Search(cleanPath[1:])
 			if n == nil {
 				// Still nothing found.
 				t.NotFoundHandler(w, r)
@@ -297,14 +304,14 @@ func (t *TreeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	handler, ok := n.leafHandler[r.Method]
+	handler, ok := n.leafValue.(map[string]HandlerFunc)[r.Method]
 	if !ok {
 		if r.Method == "HEAD" && t.HeadCanUseGet {
-			handler, ok = n.leafHandler["GET"]
+			handler, ok = n.leafValue.(map[string]HandlerFunc)["GET"]
 		}
 
 		if !ok {
-			t.MethodNotAllowedHandler(w, r, n.leafHandler)
+			t.MethodNotAllowedHandler(w, r, n.leafValue.(map[string]HandlerFunc))
 			return
 		}
 	}
@@ -357,8 +364,8 @@ func MethodNotAllowedHandler(w http.ResponseWriter, r *http.Request,
 }
 
 func New() *TreeMux {
-	root := &node{path: "/"}
-	return &TreeMux{root: root,
+	root := &Node{path: "/"}
+	return &TreeMux{Root: root,
 		NotFoundHandler:         http.NotFound,
 		MethodNotAllowedHandler: MethodNotAllowedHandler,
 		HeadCanUseGet:           true,

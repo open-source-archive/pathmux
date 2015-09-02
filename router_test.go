@@ -456,7 +456,7 @@ func TestWildcardAtSplitNode(t *testing.T) {
 	router.GET("/:slug", simpleHandler)
 	router.GET("/:slug/abc", simpleHandler)
 
-	t.Log(router.root.dumpTree("", " "))
+	t.Log(router.Root.dumpTree("", " "))
 
 	r, _ := newRequest("GET", "/patch", nil)
 	w := httptest.NewRecorder()

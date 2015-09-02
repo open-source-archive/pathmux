@@ -10,9 +10,12 @@ func dummyHandler(w http.ResponseWriter, r *http.Request, urlParams map[string]s
 
 }
 
-func addPath(t *testing.T, tree *node, path string) {
+func addPath(t *testing.T, tree *Node, path string) {
 	t.Logf("Adding path %s", path)
-	n := tree.addPath(path[1:], nil)
+	n, err := tree.addPath(path[1:], nil)
+	if err != nil {
+		t.Error(err)
+	}
 	handler := func(w http.ResponseWriter, r *http.Request, urlParams map[string]string) {
 		urlParams["path"] = path
 	}
@@ -21,7 +24,7 @@ func addPath(t *testing.T, tree *node, path string) {
 
 var test *testing.T
 
-func testPath(t *testing.T, tree *node, path string, expectPath string, expectedParams map[string]string) {
+func testPath(t *testing.T, tree *Node, path string, expectPath string, expectedParams map[string]string) {
 	if t.Failed() {
 		t.Log(tree.dumpTree("", " "))
 		t.FailNow()
@@ -30,7 +33,7 @@ func testPath(t *testing.T, tree *node, path string, expectPath string, expected
 	expectCatchAll := strings.Contains(expectPath, "/*")
 
 	t.Log("Testing", path)
-	n, paramList := tree.search(path[1:])
+	n, paramList := tree.Search(path[1:])
 	if expectPath != "" && n == nil {
 		t.Errorf("No match for %s, expected %s", path, expectPath)
 		return
@@ -48,7 +51,7 @@ func testPath(t *testing.T, tree *node, path string, expectPath string, expected
 		t.Errorf("For path %s expectCatchAll %v but saw %v", path, expectCatchAll, n.isCatchAll)
 	}
 
-	handler, ok := n.leafHandler["GET"]
+	handler, ok := n.leafValue.(map[string]HandlerFunc)["GET"]
 	if !ok {
 		t.Errorf("Path %s returned node without handler", path)
 		t.Error("Node and subtree was\n" + n.dumpTree("", " "))
@@ -98,8 +101,8 @@ func testPath(t *testing.T, tree *node, path string, expectPath string, expected
 
 }
 
-func checkHandlerNodes(t *testing.T, n *node) {
-	hasHandlers := len(n.leafHandler) != 0
+func checkHandlerNodes(t *testing.T, n *Node) {
+	hasHandlers := len(n.leafValue.(map[string]HandlerFunc)) != 0
 	hasWildcards := len(n.leafWildcardNames) != 0
 
 	if hasWildcards && !hasHandlers {
@@ -109,7 +112,7 @@ func checkHandlerNodes(t *testing.T, n *node) {
 
 func TestTree(t *testing.T) {
 	test = t
-	tree := &node{path: "/"}
+	tree := &Node{path: "/"}
 
 	addPath(t, tree, "/")
 	addPath(t, tree, "/i")
@@ -203,11 +206,14 @@ func TestTree(t *testing.T) {
 	t.Log("Test retrieval of duplicate paths")
 	params := make(map[string]string)
 	p := "date/:year/:month/abc"
-	n := tree.addPath(p, nil)
+	n, err := tree.addPath(p, nil)
+	if err != nil {
+		t.Error(err)
+	}
 	if n == nil {
 		t.Errorf("Duplicate add of %s didn't return a node", p)
 	} else {
-		handler, ok := n.leafHandler["GET"]
+		handler, ok := n.leafValue.(map[string]HandlerFunc)["GET"]
 		matchPath := ""
 		if ok {
 			handler(nil, nil, params)
@@ -230,18 +236,14 @@ func TestTree(t *testing.T) {
 func TestPanics(t *testing.T) {
 	sawPanic := false
 
-	panicHandler := func() {
-		if err := recover(); err != nil {
-			sawPanic = true
-		}
-	}
-
 	addPathPanic := func(p ...string) {
 		sawPanic = false
-		defer panicHandler()
-		tree := &node{path: "/"}
+		tree := &Node{path: "/"}
 		for _, path := range p {
-			tree.addPath(path, nil)
+			_, err := tree.addPath(path, nil)
+			if err != nil {
+				sawPanic = true
+			}
 		}
 	}
 
@@ -262,10 +264,15 @@ func TestPanics(t *testing.T) {
 
 	func() {
 		sawPanic = false
-		defer panicHandler()
-		tree := &node{path: "/"}
-		tree.setHandler("GET", dummyHandler)
-		tree.setHandler("GET", dummyHandler)
+		tree := &Node{path: "/"}
+		err := tree.setHandler("GET", dummyHandler)
+		if err != nil {
+			sawPanic = true
+		}
+		err = tree.setHandler("GET", dummyHandler)
+		if err != nil {
+			sawPanic = true
+		}
 	}()
 	if !sawPanic {
 		t.Error("Expected panic when adding a duplicate handler for a pattern")
@@ -306,32 +313,32 @@ func TestPanics(t *testing.T) {
 
 func BenchmarkTreeNullRequest(b *testing.B) {
 	b.ReportAllocs()
-	tree := &node{path: "/"}
+	tree := &Node{path: "/"}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		tree.search("")
+		tree.Search("")
 	}
 }
 
 func BenchmarkTreeOneStatic(b *testing.B) {
 	b.ReportAllocs()
-	tree := &node{path: "/"}
+	tree := &Node{path: "/"}
 	tree.addPath("abc", nil)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		tree.search("abc")
+		tree.Search("abc")
 	}
 }
 
 func BenchmarkTreeOneParam(b *testing.B) {
 	b.ReportAllocs()
-	tree := &node{path: "/"}
+	tree := &Node{path: "/"}
 	tree.addPath(":abc", nil)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		tree.search("abc")
+		tree.Search("abc")
 	}
 }
