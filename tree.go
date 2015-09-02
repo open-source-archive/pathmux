@@ -8,24 +8,21 @@ import (
 	"strings"
 )
 
-type Node struct {
+type node struct {
 	path string
 
 	priority int
 
 	// The list of static children to check.
 	staticIndices []byte
-	staticChild   []*Node
+	staticChild   []*node
 
 	// If none of the above match, check the wildcard children
-	wildcardChild *Node
+	wildcardChild *node
 
 	// If none of the above match, then we use the catch-all, if applicable.
-	catchAllChild *Node
+	catchAllChild *node
 
-	// Data for the Node is below.
-
-	addSlash   bool
 	isCatchAll bool
 
 	leafValue interface{}
@@ -34,7 +31,9 @@ type Node struct {
 	leafWildcardNames []string
 }
 
-func (n *Node) sortStaticChild(i int) {
+type Tree node
+
+func (n *node) sortStaticChild(i int) {
 	for i > 0 && n.staticChild[i].priority > n.staticChild[i-1].priority {
 		n.staticChild[i], n.staticChild[i-1] = n.staticChild[i-1], n.staticChild[i]
 		n.staticIndices[i], n.staticIndices[i-1] = n.staticIndices[i-1], n.staticIndices[i]
@@ -42,20 +41,7 @@ func (n *Node) sortStaticChild(i int) {
 	}
 }
 
-func (n *Node) setHandler(verb string, value HandlerFunc) error {
-	m, ok := n.leafValue.(map[string]HandlerFunc)
-	if !ok {
-		m = make(map[string]HandlerFunc)
-		n.leafValue = m
-	}
-	if _, ok := m[verb]; ok {
-		return errors.New("handler for this method already set")
-	}
-	m[verb] = value
-	return nil
-}
-
-func (n *Node) addPath(path string, wildcards []string) (*Node, error) {
+func (n *node) addPath(path string, wildcards []string) (*node, error) {
 	leaf := len(path) == 0
 	if leaf {
 		if wildcards != nil {
@@ -104,7 +90,7 @@ func (n *Node) addPath(path string, wildcards []string) (*Node, error) {
 		// Token starts with a *, so it's a catch-all
 		thisToken = thisToken[1:]
 		if n.catchAllChild == nil {
-			n.catchAllChild = &Node{path: thisToken, isCatchAll: true}
+			n.catchAllChild = &node{path: thisToken, isCatchAll: true}
 		}
 
 		if path[1:] != n.catchAllChild.path {
@@ -136,7 +122,7 @@ func (n *Node) addPath(path string, wildcards []string) (*Node, error) {
 		}
 
 		if n.wildcardChild == nil {
-			n.wildcardChild = &Node{path: "wildcard"}
+			n.wildcardChild = &node{path: "wildcard"}
 		}
 
 		return n.wildcardChild.addPath(remainingPath, wildcards)
@@ -159,11 +145,11 @@ func (n *Node) addPath(path string, wildcards []string) (*Node, error) {
 		}
 
 		// No existing node starting with this letter, so create it.
-		child := &Node{path: thisToken}
+		child := &node{path: thisToken}
 
 		if n.staticIndices == nil {
 			n.staticIndices = []byte{c}
-			n.staticChild = []*Node{child}
+			n.staticChild = []*node{child}
 		} else {
 			n.staticIndices = append(n.staticIndices, c)
 			n.staticChild = append(n.staticChild, child)
@@ -172,7 +158,7 @@ func (n *Node) addPath(path string, wildcards []string) (*Node, error) {
 	}
 }
 
-func (n *Node) splitCommonPrefix(existingNodeIndex int, path string) (*Node, int) {
+func (n *node) splitCommonPrefix(existingNodeIndex int, path string) (*node, int) {
 	childNode := n.staticChild[existingNodeIndex]
 
 	if strings.HasPrefix(path, childNode.path) {
@@ -200,22 +186,19 @@ func (n *Node) splitCommonPrefix(existingNodeIndex int, path string) (*Node, int
 
 	// Create a new intermediary node in the place of the existing node, with
 	// the existing node as a child.
-	newNode := &Node{
+	newNode := &node{
 		path:     commonPrefix,
 		priority: childNode.priority,
 		// Index is the first letter of the non-common part of the path.
 		staticIndices: []byte{childNode.path[0]},
-		staticChild:   []*Node{childNode},
+		staticChild:   []*node{childNode},
 	}
 	n.staticChild[existingNodeIndex] = newNode
 
 	return newNode, i
 }
 
-func (n *Node) Search(path string) (found *Node, params []string) {
-	// if test != nil {
-	// 	test.Logf("Searching for %s in %s", path, n.dumpTree("", ""))
-	// }
+func (n *node) search(path string) (found *node, params []string) {
 	pathLen := len(path)
 	if pathLen == 0 {
 		if n.leafValue == nil {
@@ -233,7 +216,7 @@ func (n *Node) Search(path string) (found *Node, params []string) {
 			childPathLen := len(child.path)
 			if pathLen >= childPathLen && child.path == path[:childPathLen] {
 				nextPath := path[childPathLen:]
-				found, params = child.Search(nextPath)
+				found, params = child.search(nextPath)
 			}
 			break
 		}
@@ -254,7 +237,7 @@ func (n *Node) Search(path string) (found *Node, params []string) {
 		nextToken := path[nextSlash:]
 
 		if len(thisToken) > 0 { // Don't match on empty tokens.
-			found, params = n.wildcardChild.Search(nextToken)
+			found, params = n.wildcardChild.search(nextToken)
 			if found != nil {
 				unescaped, err := url.QueryUnescape(thisToken)
 				if err != nil {
@@ -286,32 +269,9 @@ func (n *Node) Search(path string) (found *Node, params []string) {
 	return nil, nil
 }
 
-func (n *Node) dumpTree(prefix, nodeType string) string {
-	line := fmt.Sprintf("%s %02d %s%s [%d] %v wildcards %v\n", prefix, n.priority, nodeType, n.path,
-		len(n.staticChild), n.leafValue, n.leafWildcardNames)
-	prefix += "  "
-	for _, node := range n.staticChild {
-		line += node.dumpTree(prefix, "")
-	}
-	if n.wildcardChild != nil {
-		line += n.wildcardChild.dumpTree(prefix, ":")
-	}
-	if n.catchAllChild != nil {
-		line += n.catchAllChild.dumpTree(prefix, "*")
-	}
-	return line
-}
-
-type Tree struct {
-	root *Node
-}
-
 func (t *Tree) Add(path string, value interface{}) error {
-	if t.root == nil {
-		t.root = &Node{path: "/"}
-	}
-
-	n, err := t.root.addPath(path[1:], nil)
+	path = httppath.Clean(path)
+	n, err := (*node)(t).addPath(path[1:], nil)
 	if err != nil {
 		return err
 	}
@@ -320,13 +280,9 @@ func (t *Tree) Add(path string, value interface{}) error {
 	return nil
 }
 
-func (t *Tree) Search(path string) (interface{}, map[string]string) {
-	if t.root == nil {
-		return nil, nil
-	}
-
+func (t *Tree) Lookup(path string) (interface{}, map[string]string) {
 	path = httppath.Clean(path)
-	node, params := t.root.Search(path[1:])
+	node, params := (*node)(t).search(path[1:])
 	if node == nil {
 		return nil, nil
 	}
