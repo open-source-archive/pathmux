@@ -1,9 +1,8 @@
-package httptreemux
+package pathmux
 
 import (
 	"errors"
 	"fmt"
-	"github.com/dimfeld/httppath"
 	"net/url"
 	"strings"
 )
@@ -270,7 +269,6 @@ func (n *node) search(path string) (found *node, params []string) {
 }
 
 func (t *Tree) Add(path string, value interface{}) error {
-	path = httppath.Clean(path)
 	n, err := (*node)(t).addPath(path[1:], nil)
 	if err != nil {
 		return err
@@ -281,7 +279,6 @@ func (t *Tree) Add(path string, value interface{}) error {
 }
 
 func (t *Tree) Lookup(path string) (interface{}, map[string]string) {
-	path = httppath.Clean(path)
 	node, params := (*node)(t).search(path[1:])
 	if node == nil {
 		return nil, nil
