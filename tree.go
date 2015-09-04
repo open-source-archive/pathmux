@@ -279,6 +279,10 @@ func (t *Tree) Add(path string, value interface{}) error {
 }
 
 func (t *Tree) Lookup(path string) (interface{}, map[string]string) {
+    if path == "" {
+        path = "/"
+    }
+
 	node, params := (*node)(t).search(path[1:])
 	if node == nil {
 		return nil, nil
