@@ -1,3 +1,9 @@
+/*
+Package pathmux implements a tree lookup for values associated to
+paths.
+
+This package is a fork of https://github.com/dimfeld/httptreemux.
+*/
 package pathmux
 
 import (
@@ -30,6 +36,7 @@ type node struct {
 	leafWildcardNames []string
 }
 
+// Tree structure to store values associated to paths.
 type Tree node
 
 func (n *node) sortStaticChild(i int) {
@@ -268,6 +275,14 @@ func (n *node) search(path string) (found *node, params []string) {
 	return nil, nil
 }
 
+// Add a value to the tree associated with a path. Paths may contain
+// wildcards. Wildcards can be of two types:
+// 
+// - simple wildcard: e.g. /some/:wildcard/path, where a wildcard is
+// matched to a single name in the path.
+//
+// - free wildcard: e.g. /some/path/*wildcard, where a wildcard at the
+// end of a path matches anything.
 func (t *Tree) Add(path string, value interface{}) error {
 	n, err := (*node)(t).addPath(path[1:], nil)
 	if err != nil {
@@ -278,6 +293,9 @@ func (t *Tree) Add(path string, value interface{}) error {
 	return nil
 }
 
+// Find a value in the tree associated to a path. If the found path
+// definition contains wildcards, the names and values of the wildcards
+// are returned in the second argument.
 func (t *Tree) Lookup(path string) (interface{}, map[string]string) {
     if path == "" {
         path = "/"
