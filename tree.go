@@ -277,7 +277,7 @@ func (n *node) search(path string) (found *node, params []string) {
 
 // Add a value to the tree associated with a path. Paths may contain
 // wildcards. Wildcards can be of two types:
-// 
+//
 // - simple wildcard: e.g. /some/:wildcard/path, where a wildcard is
 // matched to a single name in the path.
 //
@@ -297,9 +297,9 @@ func (t *Tree) Add(path string, value interface{}) error {
 // definition contains wildcards, the names and values of the wildcards
 // are returned in the second argument.
 func (t *Tree) Lookup(path string) (interface{}, map[string]string) {
-    if path == "" {
-        path = "/"
-    }
+	if path == "" {
+		path = "/"
+	}
 
 	node, params := (*node)(t).search(path[1:])
 	if node == nil {
