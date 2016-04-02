@@ -13,6 +13,10 @@ import (
 	"strings"
 )
 
+type Matcher interface {
+	isMatch(value interface{}) bool
+}
+
 type node struct {
 	path string
 
@@ -204,10 +208,10 @@ func (n *node) splitCommonPrefix(existingNodeIndex int, path string) (*node, int
 	return newNode, i
 }
 
-func (n *node) search(path string) (found *node, params []string) {
+func (n *node) search(path string, m Matcher) (found *node, params []string) {
 	pathLen := len(path)
 	if pathLen == 0 {
-		if n.leafValue == nil {
+		if n.leafValue == nil || (m != nil && !m.isMatch(n.leafValue)) {
 			return nil, nil
 		} else {
 			return n, nil
@@ -222,7 +226,7 @@ func (n *node) search(path string) (found *node, params []string) {
 			childPathLen := len(child.path)
 			if pathLen >= childPathLen && child.path == path[:childPathLen] {
 				nextPath := path[childPathLen:]
-				found, params = child.search(nextPath)
+				found, params = child.search(nextPath, m)
 			}
 			break
 		}
@@ -243,7 +247,7 @@ func (n *node) search(path string) (found *node, params []string) {
 		nextToken := path[nextSlash:]
 
 		if len(thisToken) > 0 { // Don't match on empty tokens.
-			found, params = n.wildcardChild.search(nextToken)
+			found, params = n.wildcardChild.search(nextToken, m)
 			if found != nil {
 				unescaped, err := url.QueryUnescape(thisToken)
 				if err != nil {
@@ -296,12 +300,12 @@ func (t *Tree) Add(path string, value interface{}) error {
 // Find a value in the tree associated to a path. If the found path
 // definition contains wildcards, the names and values of the wildcards
 // are returned in the second argument.
-func (t *Tree) Lookup(path string) (interface{}, map[string]string) {
+func (t *Tree) Lookup(path string, m Matcher) (interface{}, map[string]string) {
 	if path == "" {
 		path = "/"
 	}
 
-	node, params := (*node)(t).search(path[1:])
+	node, params := (*node)(t).search(path[1:], m)
 	if node == nil {
 		return nil, nil
 	}
