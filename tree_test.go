@@ -34,7 +34,7 @@ func testPath(t *testing.T, tree *node, path string, expectPath string, expected
 	expectCatchAll := strings.Contains(expectPath, "/*")
 
 	t.Log("Testing", path)
-	n, paramList := tree.search(path[1:], nil)
+	n, paramList := tree.search(path[1:], tm)
 	if expectPath != "" && n == nil {
 		t.Errorf("No match for %s, expected %s", path, expectPath)
 		return
@@ -309,7 +309,7 @@ func TestFalseMatcher(t *testing.T) {
 		t.Error(err)
 	}
 
-	v, _ := tree.Lookup("/some/path", &TestMatcher{false})
+	v, _ := tree.LookupMatcher("/some/path", &TestMatcher{false})
 
 	if v != nil {
 		t.Error("failed, no match expected for false matcher")
@@ -323,7 +323,21 @@ func TestTrueMatcher(t *testing.T) {
 		t.Error(err)
 	}
 
-	v, _ := tree.Lookup("/some/path", &TestMatcher{true})
+	v, _ := tree.LookupMatcher("/some/path", &TestMatcher{true})
+
+	if v == nil {
+		t.Error("failed, match expected for true matcher")
+	}
+}
+
+func TestDefaultMatcher(t *testing.T) {
+	tree := &Tree{}
+	err := tree.Add("/some/path", 1)
+	if err != nil {
+		t.Error(err)
+	}
+
+	v, _ := tree.Lookup("/some/path")
 
 	if v == nil {
 		t.Error("failed, match expected for true matcher")
@@ -336,7 +350,7 @@ func BenchmarkTreeNullRequest(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		tree.search("", nil)
+		tree.search("", tm)
 	}
 }
 
@@ -347,7 +361,7 @@ func BenchmarkTreeOneStatic(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		tree.search("abc", nil)
+		tree.search("abc", tm)
 	}
 }
 
@@ -358,6 +372,6 @@ func BenchmarkTreeOneParam(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		tree.search("abc", nil)
+		tree.search("abc", tm)
 	}
 }

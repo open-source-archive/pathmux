@@ -17,6 +17,20 @@ type Matcher interface {
 	Match(value interface{}) bool
 }
 
+type trueMatcher struct {
+
+}
+
+func (m *trueMatcher) Match(value interface{}) bool {
+	return true
+}
+
+var tm *trueMatcher
+
+func init() {
+	tm = &trueMatcher{}
+}
+
 type node struct {
 	path string
 
@@ -211,11 +225,11 @@ func (n *node) splitCommonPrefix(existingNodeIndex int, path string) (*node, int
 func (n *node) search(path string, m Matcher) (found *node, params []string) {
 	pathLen := len(path)
 	if pathLen == 0 {
-		if n.leafValue == nil || (m != nil && !m.Match(n.leafValue)) {
+		if n.leafValue == nil || !m.Match(n.leafValue) {
 			return nil, nil
-		} else {
-			return n, nil
 		}
+
+		return n, nil
 	}
 
 	// First see if this matches a static token.
@@ -300,7 +314,15 @@ func (t *Tree) Add(path string, value interface{}) error {
 // Find a value in the tree associated to a path. If the found path
 // definition contains wildcards, the names and values of the wildcards
 // are returned in the second argument.
-func (t *Tree) Lookup(path string, m Matcher) (interface{}, map[string]string) {
+func (t *Tree) Lookup(path string) (interface{}, map[string]string) {
+	return t.LookupMatcher(path, tm)
+}
+
+// Find a value in the tree associated to a path. If the found path
+// definition contains wildcards, the names and values of the wildcards
+// are returned in the second argument. When value will be founded, matcher will be called to check if value
+// match extra logic.
+func (t *Tree) LookupMatcher (path string, m Matcher) (interface{}, map[string]string) {
 	if path == "" {
 		path = "/"
 	}
