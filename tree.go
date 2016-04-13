@@ -14,7 +14,7 @@ import (
 )
 
 type Matcher interface {
-	IsMatch(value interface{}) bool
+	Match(value interface{}) bool
 }
 
 type node struct {
@@ -211,7 +211,7 @@ func (n *node) splitCommonPrefix(existingNodeIndex int, path string) (*node, int
 func (n *node) search(path string, m Matcher) (found *node, params []string) {
 	pathLen := len(path)
 	if pathLen == 0 {
-		if n.leafValue == nil || (m != nil && !m.IsMatch(n.leafValue)) {
+		if n.leafValue == nil || (m != nil && !m.Match(n.leafValue)) {
 			return nil, nil
 		} else {
 			return n, nil

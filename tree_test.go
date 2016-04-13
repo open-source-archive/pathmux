@@ -298,7 +298,7 @@ type TestMatcher struct {
 	match bool
 }
 
-func (fm *TestMatcher) IsMatch(value interface{}) bool {
+func (fm *TestMatcher) Match(value interface{}) bool {
 	return fm.match
 }
 
