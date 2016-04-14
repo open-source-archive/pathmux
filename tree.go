@@ -17,9 +17,7 @@ type Matcher interface {
 	Match(value interface{}) bool
 }
 
-type trueMatcher struct {
-
-}
+type trueMatcher struct {}
 
 func (m *trueMatcher) Match(value interface{}) bool {
 	return true
