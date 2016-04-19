@@ -13,6 +13,9 @@ import (
 	"strings"
 )
 
+// When using the LookupMatch function, types satifying the Matcher interface can be used for additional checks and
+// to override the default result in case of path matches. The argument passed to the Match function is the original
+// value passed to the Tree.Add function.
 type Matcher interface {
 	Match(value interface{}) (bool, interface{})
 }
@@ -335,6 +338,9 @@ func (t *Tree) Lookup(path string) (interface{}, map[string]string) {
 // definition contains wildcards, the names and values of the wildcards
 // are returned in the second argument. When value will be founded, matcher will be called to check if value
 // match extra logic.
+// When a path match is found, the Matcher is called for additional, custom check. If it returns true, then
+// the additional returned value is used as the result of the lookup. If it returns false, the tree search continues
+// as if there was no path match in the given position at all.
 func (t *Tree) LookupMatcher (path string, m Matcher) (interface{}, map[string]string, interface{}) {
 	if path == "" {
 		path = "/"
