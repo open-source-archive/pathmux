@@ -13,6 +13,25 @@ import (
 	"strings"
 )
 
+// When using the LookupMatch function, types satifying the Matcher interface can be used for additional checks and
+// to override the default result in case of path matches. The argument passed to the Match function is the original
+// value passed to the Tree.Add function.
+type Matcher interface {
+	Match(value interface{}) (bool, interface{})
+}
+
+type trueMatcher struct {}
+
+func (m *trueMatcher) Match(value interface{}) (bool, interface{}) {
+	return true, value
+}
+
+var tm *trueMatcher
+
+func init() {
+	tm = &trueMatcher{}
+}
+
 type node struct {
 	path string
 
@@ -204,14 +223,21 @@ func (n *node) splitCommonPrefix(existingNodeIndex int, path string) (*node, int
 	return newNode, i
 }
 
-func (n *node) search(path string) (found *node, params []string) {
+func (n *node) search(path string, m Matcher) (found *node, params []string, value interface{}) {
 	pathLen := len(path)
 	if pathLen == 0 {
 		if n.leafValue == nil {
-			return nil, nil
-		} else {
-			return n, nil
+			return nil, nil, nil
 		}
+
+		var match bool
+		match, value = m.Match(n.leafValue)
+
+		if (!match) {
+			return nil, nil, nil
+		}
+
+		return n, nil, value
 	}
 
 	// First see if this matches a static token.
@@ -222,7 +248,7 @@ func (n *node) search(path string) (found *node, params []string) {
 			childPathLen := len(child.path)
 			if pathLen >= childPathLen && child.path == path[:childPathLen] {
 				nextPath := path[childPathLen:]
-				found, params = child.search(nextPath)
+				found, params, value = child.search(nextPath, m)
 			}
 			break
 		}
@@ -243,7 +269,7 @@ func (n *node) search(path string) (found *node, params []string) {
 		nextToken := path[nextSlash:]
 
 		if len(thisToken) > 0 { // Don't match on empty tokens.
-			found, params = n.wildcardChild.search(nextToken)
+			found, params, value = n.wildcardChild.search(nextToken, m)
 			if found != nil {
 				unescaped, err := url.QueryUnescape(thisToken)
 				if err != nil {
@@ -269,10 +295,17 @@ func (n *node) search(path string) (found *node, params []string) {
 			unescaped = path
 		}
 
-		return catchAllChild, []string{unescaped}
+		var match bool
+		match, value = m.Match(catchAllChild.leafValue)
+
+		if (!match) {
+			return nil, nil, nil
+		}
+
+		return catchAllChild, []string{unescaped}, value
 	}
 
-	return nil, nil
+	return nil, nil, nil
 }
 
 // Add a value to the tree associated with a path. Paths may contain
@@ -297,13 +330,25 @@ func (t *Tree) Add(path string, value interface{}) error {
 // definition contains wildcards, the names and values of the wildcards
 // are returned in the second argument.
 func (t *Tree) Lookup(path string) (interface{}, map[string]string) {
+	node, params, _ := t.LookupMatcher(path, tm)
+	return node, params
+}
+
+// Find a value in the tree associated to a path. If the found path
+// definition contains wildcards, the names and values of the wildcards
+// are returned in the second argument. When value will be founded, matcher will be called to check if value
+// match extra logic.
+// When a path match is found, the Matcher is called for additional, custom check. If it returns true, then
+// the additional returned value is used as the result of the lookup. If it returns false, the tree search continues
+// as if there was no path match in the given position at all.
+func (t *Tree) LookupMatcher (path string, m Matcher) (interface{}, map[string]string, interface{}) {
 	if path == "" {
 		path = "/"
 	}
 
-	node, params := (*node)(t).search(path[1:])
+	node, params, value := (*node)(t).search(path[1:], m)
 	if node == nil {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	paramMap := make(map[string]string)
@@ -311,5 +356,5 @@ func (t *Tree) Lookup(path string) (interface{}, map[string]string) {
 		paramMap[node.leafWildcardNames[len(node.leafWildcardNames)-i-1]] = p
 	}
 
-	return node.leafValue, paramMap
+	return node.leafValue, paramMap, value
 }
