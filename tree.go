@@ -13,14 +13,18 @@ import (
 	"strings"
 )
 
-// When using the LookupMatch function, types satifying the Matcher interface can be used for additional checks and
-// to override the default result in case of path matches. The argument passed to the Match function is the original
-// value passed to the Tree.Add function.
+// Matcher objects, when using the LookupMatch function, can be used for additional checks and to override the
+// default result in case of path matches. The argument passed to the Match function is the original value
+// passed to the Tree.Add function.
 type Matcher interface {
+
+	// Match should return true and the object to be returned by the lookup, when the argument value fulfils the
+	// conditions defined by the custom logic in the matcher itself. If it returns false, it instructs the
+	// lookup to continue with backtracking from the current tree position.
 	Match(value interface{}) (bool, interface{})
 }
 
-type trueMatcher struct {}
+type trueMatcher struct{}
 
 func (m *trueMatcher) Match(value interface{}) (bool, interface{}) {
 	return true, value
@@ -233,7 +237,7 @@ func (n *node) search(path string, m Matcher) (found *node, params []string, val
 		var match bool
 		match, value = m.Match(n.leafValue)
 
-		if (!match) {
+		if !match {
 			return nil, nil, nil
 		}
 
@@ -298,7 +302,7 @@ func (n *node) search(path string, m Matcher) (found *node, params []string, val
 		var match bool
 		match, value = m.Match(catchAllChild.leafValue)
 
-		if (!match) {
+		if !match {
 			return nil, nil, nil
 		}
 
@@ -326,22 +330,19 @@ func (t *Tree) Add(path string, value interface{}) error {
 	return nil
 }
 
-// Find a value in the tree associated to a path. If the found path
-// definition contains wildcards, the names and values of the wildcards
-// are returned in the second argument.
+// Lookup tries to find a value in the tree associated to a path. If the found path definition contains
+// wildcards, the names and values of the wildcards are returned in the second argument.
 func (t *Tree) Lookup(path string) (interface{}, map[string]string) {
 	node, params, _ := t.LookupMatcher(path, tm)
 	return node, params
 }
 
-// Find a value in the tree associated to a path. If the found path
-// definition contains wildcards, the names and values of the wildcards
-// are returned in the second argument. When value will be founded, matcher will be called to check if value
-// match extra logic.
-// When a path match is found, the Matcher is called for additional, custom check. If it returns true, then
-// the additional returned value is used as the result of the lookup. If it returns false, the tree search continues
-// as if there was no path match in the given position at all.
-func (t *Tree) LookupMatcher (path string, m Matcher) (interface{}, map[string]string, interface{}) {
+// LookupMatcher tries to find value in the tree associated to a path. If the found path definition contains
+// wildcards, the names and values of the wildcards are returned in the second argument. When a value is found,
+// the matcher is called to check if the value meets the conditions implemented by the custom matcher. If it
+// returns true, then the lookup is done and the additional return value from the matcher is returned as the
+// lookup result. If it returns false, the lookup continues with backtracking from the current tree position.
+func (t *Tree) LookupMatcher(path string, m Matcher) (interface{}, map[string]string, interface{}) {
 	if path == "" {
 		path = "/"
 	}
