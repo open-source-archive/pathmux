@@ -41,13 +41,13 @@ the following:
 - check the list of open issues. Either assign an existing issue to yourself, or create a new one that you would
   like to work on and discuss your ideas and use cases;
 - fork the repository on GitHub;
-- check out a topic branch from where you want to base your work; (In simple cases, this is usually master.);
+- check out a topic branch from where you want to base your work; (in simple cases, this is usually master;)
 - make sure there are no performance degradations (see below);
 - make commits of logical units;
 - write good commit messages (see below);
 - run `make precommit` (see below);
-- push your changes to a topic branch in your fork of the repository. (Or if it works for the current state of
-  your fork, just use master.);
+- push your changes to a topic branch in your fork of the repository; (or if it works for the current state of
+  your fork, just use master;)
 - submit a pull request to [zalando/pathmux](https://github.com/zalando/pathmux);
 - your pull request must receive a :+1: from one [Maintainer](https://github.com/zalando/pathmux/blob/master/MAINTAINERS);
 
