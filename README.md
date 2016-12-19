@@ -11,7 +11,7 @@ interface of the internal tree lookup implementation of the original httptreemux
 http related wrapper code stripped off.
 
 In addition to the original httptreemux logic, it offers one small feature: backtracking. This means that when a
-path matches a path, it is possible to instruct the lookup not to return the found object when other, custom
+path is matched, it is possible to instruct the lookup not to return the found object when other, custom
 conditions are not met, but continue the lookup by backtracking from the current point in the tree.
 
 Pathmux is used by Skipper, an extensible HTTP routing server:
@@ -21,8 +21,8 @@ Pathmux is used by Skipper, an extensible HTTP routing server:
 
 Almost never, except when:
 
-- want to store large amount **custom** objects in an effective lookup tree keyed by path values
-- want to use the backtracking feature to refine the evaluation of wildcard matching with custom logic
+- you want to store large amount of **custom** objects in an effective lookup tree keyed by path values
+- you want to use the backtracking feature to refine the evaluation of wildcard matching with custom logic
 
 ### Installation
 
