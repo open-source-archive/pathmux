@@ -10,8 +10,7 @@ In addition to having the original httptreemux logic, pathmux offers one small f
 path is matched, it is possible to instruct the lookup not to return the found object when other, custom
 conditions are not met, but continue the lookup by backtracking from the current point in the tree.
 
-Pathmux is used by Skipper, an extensible HTTP routing server:
-[https://github.com/zalando/skipper](https://github.com/zalando/skipper).
+Pathmux is used by [Skipper][https://github.com/zalando/skipper](https://github.com/zalando/skipper), an extensible HTTP routing server used in production at Zalando.
 
 ### When to Use pathmux Instead of httptreemux
 
@@ -26,15 +25,11 @@ Almost never, except when:
 go get github.com/zalando/pathmux
 ```
 
-Package pathmux is 'go get compatible'. The master head is always stable (at least by intent), and it doesn't
-use any vendoring itself. However, we strongly recommend to use vendoring in the final, importing, executable
-package.
+Pathmux is 'go get compatible'. The master head is always stable (at least by intent), and it doesn't use any vendoring itself. However, we strongly recommend to use vendoring in the final, importing, executable package.
 
 ### Documentation
 
-The package documentation can be found at:
-
-https://godoc.org/github.com/zalando/pathmux
+You can find detailed package documentation [here](https://godoc.org/github.com/zalando/pathmux).
 
 ### Working with the Code
 
