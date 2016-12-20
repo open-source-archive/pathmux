@@ -25,7 +25,7 @@ Almost never, except when:
 go get github.com/zalando/pathmux
 ```
 
-Pathmux is 'go get compatible'. The master head is always stable (at least by intent), and it doesn't use any vendoring itself. However, we strongly recommend to use vendoring in the final, importing, executable package.
+Pathmux is 'go get compatible'. The master head is always stable (at least by intent), and it doesn't use any vendoring itself. However, we strongly recommend that you use vendoring in the final, importing, executable package.
 
 ### Documentation
 
