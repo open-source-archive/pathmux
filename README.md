@@ -2,26 +2,22 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/zalando/pathmux)](https://goreportcard.com/report/github.com/zalando/pathmux)
 [![Go Cover](https://gocover.io/_badge/github.com/zalando/pathmux)](https://gocover.io/github.com/zalando/pathmux)
 
-# pathmux
+# Pathmux: tree lookup with wildcard matching
 
-Package pathmux implements an effective tree lookup with wildcard matching.
+Pathmux is a package that implements an effective tree lookup with wildcard matching. It is a fork of the awesome [httptreemux](https://github.com/dimfeld/httptreemux). This fork makes visible the interface of the internal tree lookup implementation of the original httptreemux package, and with the HTTP-related wrapper code stripped away.
 
-Pathmux is a fork of the awesome [httptreemux](https://github.com/dimfeld/httptreemux). This fork makes the
-interface of the internal tree lookup implementation of the original httptreemux package visible, and has the
-http related wrapper code stripped off.
-
-In addition to the original httptreemux logic, it offers one small feature: backtracking. This means that when a
+In addition to having the original httptreemux logic, pathmux offers one small feature: backtracking. This means that when a
 path is matched, it is possible to instruct the lookup not to return the found object when other, custom
 conditions are not met, but continue the lookup by backtracking from the current point in the tree.
 
 Pathmux is used by Skipper, an extensible HTTP routing server:
 [https://github.com/zalando/skipper](https://github.com/zalando/skipper).
 
-### When to use pathmux instead of httptreemux
+### When to Use pathmux Instead of httptreemux
 
 Almost never, except when:
 
-- you want to store a large amount of **custom** objects in an effective lookup tree keyed by path values
+- you want to store a large number of **custom** objects in an effective lookup tree, keyed by path values
 - you want to use the backtracking feature to refine the evaluation of wildcard matching with custom logic
 
 ### Installation
@@ -40,7 +36,7 @@ The package documentation can be found at:
 
 https://godoc.org/github.com/zalando/pathmux
 
-### Working with the code
+### Working with the Code
 
 While it is enough to use `go get` to import the package, when modifying the code, it is worth to cherry-pick
 from the tasks in the provided simple Makefile. If you plan to contribute to the current repository, please make
@@ -61,9 +57,19 @@ feel free to provide tests for the missing spots :))
 make bench
 ```
 
-(Comparison currently can happen only by running the same `make bench` on the master branch. Automating the
-comparison would be a nice contribution.)
+(Comparison currently can happen only by running the same `make bench` on the master branch. Automating the comparison would be a nice contribution.)
 
-Also see our (somewhat) more detailed contribution guildelines:
+### Contributing
+See our detailed [contribution guidelines](https://github.com/zalando/pathmux/blob/master/CONTRIBUTING.md). Some to-do's:
 
-[https://github.com/zalando/pathmux/blob/master/CONTRIBUTING.md](https://github.com/zalando/pathmux/blob/master/CONTRIBUTING.md)
+- Automating the comparison (as mentioned above) would be a nice contribution
+
+### License
+
+Copyright (c) 2014 Daniel Imfeld, 2015 Zalando SE
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
