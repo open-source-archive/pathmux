@@ -70,7 +70,7 @@ func testPath(t *testing.T, tree *node, path string, expectPath string, expected
 
 	if expectedParams == nil {
 		if len(paramList) != 0 {
-			t.Errorf("Path %p expected no parameters, saw %v", path, paramList)
+			t.Errorf("Path %s expected no parameters, saw %v", path, paramList)
 		}
 	} else {
 		if len(paramList) != len(n.leafWildcardNames) {
@@ -298,7 +298,7 @@ type TestMatcher struct {
 	match bool
 }
 
-func (fm *TestMatcher) Match(value interface{}) (bool, interface{})	 {
+func (fm *TestMatcher) Match(value interface{}) (bool, interface{}) {
 	return fm.match, value
 }
 
