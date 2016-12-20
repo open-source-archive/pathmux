@@ -21,7 +21,7 @@ Pathmux is used by Skipper, an extensible HTTP routing server:
 
 Almost never, except when:
 
-- you want to store large amount of **custom** objects in an effective lookup tree keyed by path values
+- you want to store a large amount of **custom** objects in an effective lookup tree keyed by path values
 - you want to use the backtracking feature to refine the evaluation of wildcard matching with custom logic
 
 ### Installation
