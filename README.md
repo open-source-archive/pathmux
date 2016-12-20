@@ -8,7 +8,7 @@ Pathmux is a package that implements an effective tree lookup with wildcard matc
 
 In addition to having the original httptreemux logic, pathmux offers one small feature: backtracking. This means that when a
 path is matched, it is possible to instruct the lookup not to return the found object when other, custom
-conditions are not met, but continue the lookup by backtracking from the current point in the tree.
+conditions are not met, but instead continue the lookup by backtracking from the current point in the tree.
 
 Pathmux is used by [Skipper](https://github.com/zalando/skipper), an extensible HTTP routing server used in production at Zalando.
 
@@ -33,9 +33,10 @@ You can find detailed package documentation [here](https://godoc.org/github.com/
 
 ### Working with the Code
 
-While it is enough to use `go get` to import the package, when modifying the code, it is worth to cherry-pick
-from the tasks in the provided simple Makefile. If you plan to contribute to the current repository, please make
-sure:
+While it is enough to use `go get` to import the package, when modifying the code, it is worth cherry-picking from the tasks in the provided simple Makefile. 
+
+### Contributing
+See our detailed [contribution guidelines](https://github.com/zalando/pathmux/blob/master/CONTRIBUTING.md). If you plan on contributing to the current repository, please make sure:
 
 1. to run the precommit checks:
 
@@ -53,11 +54,6 @@ make bench
 ```
 
 (Comparison currently can happen only by running the same `make bench` on the master branch. Automating the comparison would be a nice contribution.)
-
-### Contributing
-See our detailed [contribution guidelines](https://github.com/zalando/pathmux/blob/master/CONTRIBUTING.md). Some to-do's:
-
-- Automating the comparison (as mentioned above) would be a nice contribution
 
 ### License
 
